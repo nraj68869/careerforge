@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -66,6 +67,18 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public UserStatsResponse getStats() {
         return userService.getStats();
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<UserResponse> pendingRecruiters() {
+        return userService.pendingRecruiters();
+    }
+    
+    @PutMapping("/{id}/approval")
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponse reviewRecruiter(@PathVariable Long id, @Valid @RequestBody ReviewRecruiterRequest request) {
+        return userService.reviewRecruiter(id, request.status());
     }
     
 

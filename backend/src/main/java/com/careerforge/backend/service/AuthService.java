@@ -12,10 +12,13 @@ import com.careerforge.backend.exception.InvalidCredentialsException;
 import com.careerforge.backend.exception.UserNotFoundException;
 import com.careerforge.backend.security.AuthUser;
 import com.careerforge.backend.security.JwtService;
+import com.careerforge.backend.entity.ApprovalStatus;
 import com.careerforge.backend.security.LoginAttemptService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.careerforge.backend.exception.ApiException;
+import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -40,16 +43,23 @@ public class AuthService {
         // a fake hash, so unknown emails cost the same time as real ones (see login)
         this.dummyHash = passwordEncoder.encode("not-a-real-password");
     }
-
     public UserResponse register(RegisterRequest req) {
-        String email = req.email().trim().toLowerCase();
-        if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw new DuplicateEmailException(email);
-        }
-        User saved = userRepository.save(
-                new User(req.name().trim(), email, passwordEncoder.encode(req.password()), Role.STUDENT));
-        return toResponse(saved);
+    Role role = req.role() == null ? Role.STUDENT : req.role();
+    if (role != Role.STUDENT && role != Role.RECRUITER) {
+        throw new ApiException(HttpStatus.BAD_REQUEST, "You can only register as a student or a recruiter");
     }
+
+    String email = req.email().trim().toLowerCase();
+    if (userRepository.existsByEmailIgnoreCase(email)) {
+        throw new DuplicateEmailException(email);
+    }
+
+    User user = new User(req.name().trim(), email, passwordEncoder.encode(req.password()), role);
+    if (role == Role.RECRUITER) {
+        user.setApprovalStatus(ApprovalStatus.PENDING);   // an admin must approve recruiters
+    }
+    return toResponse(userRepository.save(user));
+}  
 
     public AuthResponse login(LoginRequest req, String clientIp) {
         String email = req.email().trim().toLowerCase();
@@ -103,6 +113,6 @@ public class AuthService {
     }
 
     private UserResponse toResponse(User u) {
-        return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getRole(), u.isEnabled());
+        return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getRole(), u.isEnabled(), u.getApprovalStatus());
     }
 }

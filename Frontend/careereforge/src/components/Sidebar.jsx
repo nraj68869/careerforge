@@ -4,6 +4,9 @@ const NAV = [
   { key: "dashboard", label: "Dashboard", icon: "▦", roles: ["ADMIN"] },
   { key: "jobs", label: "Jobs", icon: "▤", roles: ["STUDENT", "PLACEMENT_OFFICER", "ADMIN"] },
   { key: "my-jobs", label: "My jobs", icon: "✎", roles: ["RECRUITER", "PLACEMENT_OFFICER", "ADMIN"] },
+  { key: "my-applications", label: "My applications", icon: "☑", roles: ["STUDENT"] },
+  { key: "profile", label: "My profile", icon: "☺", roles: ["STUDENT"] },
+  { key: "applications", label: "Applications", icon: "↗", roles: ["PLACEMENT_OFFICER", "ADMIN"] },
   { key: "account", label: "My account", icon: "♙", roles: ["STUDENT", "RECRUITER", "PLACEMENT_OFFICER", "ADMIN"] },
 ];
 
@@ -25,9 +28,6 @@ function Sidebar() {
             <span className="nav-icon">{item.icon}</span> {item.label}
           </a>
         ))}
-        <a className="nav-item disabled" href="#/" onClick={(e) => e.preventDefault()} title="Coming soon">
-          <span className="nav-icon">↗</span> Applications <span className="soon-tag">SOON</span>
-        </a>
       </nav>
 
       <div className="sidebar-bottom">

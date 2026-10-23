@@ -1,5 +1,6 @@
 package com.careerforge.backend.service;
 
+import com.careerforge.backend.Repository.JobApplicationRepository;
 import com.careerforge.backend.Repository.JobRepository;
 import com.careerforge.backend.Repository.UserRepository;
 import com.careerforge.backend.dto.JobRequest;
@@ -21,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class JobService {
@@ -28,10 +31,13 @@ public class JobService {
 
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final JobApplicationRepository applicationRepository;
 
-    public JobService(JobRepository jobRepository, UserRepository userRepository) {
+    public JobService(JobRepository jobRepository, UserRepository userRepository,
+                      JobApplicationRepository applicationRepository) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
+        this.applicationRepository = applicationRepository;
     }
 
     // ---------- reading ----------
@@ -42,7 +48,9 @@ public class JobService {
                                     String q, String location, int page, int size) {
         boolean student = actor.role() == Role.STUDENT;
         Specification<Job> spec = buildSpec(null, student ? null : status, student, type, q, location);
-        return jobRepository.findAll(spec, pageable(page, size)).map(this::toResponse);
+        Page<Job> result = jobRepository.findAll(spec, pageable(page, size));
+        Map<Long, ApplicationStatus> mine = student ? myStatuses(actor.id(), result.getContent()) : Map.of();
+        return result.map(job -> toResponse(job, mine.get(job.getId())));
     }
 
     /** The jobs I posted, any status. */
@@ -57,7 +65,11 @@ public class JobService {
     public JobResponse get(AuthUser actor, Long id) {
         Job job = findOrThrow(id);
         if (!canView(actor, job)) throw notFound();
-        return toResponse(job);
+        ApplicationStatus mine = actor.role() == Role.STUDENT
+                ? applicationRepository.findByJobIdAndStudentId(id, actor.id())
+                        .map(JobApplication::getStatus).orElse(null)
+                : null;
+        return toResponse(job, mine);
     }
 
     // ---------- writing ----------
@@ -94,7 +106,12 @@ public class JobService {
 
     @Transactional
     public void delete(AuthUser actor, Long id) {
-        jobRepository.delete(findManageable(actor, id));
+        Job job = findManageable(actor, id);
+        if (applicationRepository.existsByJobId(id)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "This job has applications. Close it instead of deleting it.");
+        }
+        jobRepository.delete(job);
     }
 
     // ---------- the permission rules (one place) ----------
@@ -154,7 +171,7 @@ public class JobService {
         job.setDeadline(req.deadline());
     }
 
-    
+    // The client NEVER chooses the sort field, and the page size is capped.
     private Pageable pageable(int page, int size) {
         int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
         return PageRequest.of(Math.max(page, 0), safeSize,
@@ -186,13 +203,26 @@ public class JobService {
         };
     }
 
+    // a user typing % or _ must not act as a wildcard
     private String escapeLike(String s) {
         return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
+    // one query for the whole page: which of these jobs did this student apply to?
+    private Map<Long, ApplicationStatus> myStatuses(Long studentId, List<Job> jobs) {
+        if (jobs.isEmpty()) return Map.of();
+        List<Long> ids = jobs.stream().map(Job::getId).toList();
+        return applicationRepository.findByStudentIdAndJobIdIn(studentId, ids).stream()
+                .collect(Collectors.toMap(a -> a.getJob().getId(), JobApplication::getStatus));
+    }
+
     private JobResponse toResponse(Job j) {
+        return toResponse(j, null);
+    }
+
+    private JobResponse toResponse(Job j, ApplicationStatus myStatus) {
         return new JobResponse(j.getId(), j.getTitle(), j.getCompany(), j.getLocation(), j.getType(),
                 j.getDescription(), j.getSalaryMin(), j.getSalaryMax(), j.getDeadline(), j.getStatus(),
-                isAccepting(j), j.getPostedBy().getId(), j.getPostedBy().getName(), j.getCreatedAt());
+                isAccepting(j), j.getPostedBy().getId(), j.getPostedBy().getName(), j.getCreatedAt(), myStatus);
     }
 }

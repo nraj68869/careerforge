@@ -28,5 +28,11 @@ export const usersApi = {
   },
   stats() {
   return request("/users/stats");
-},
+  },
+  pending() {
+  return request("/users/pending");
+  },
+  review(id, status) {
+  return request(`/users/${id}/approval`, { method: "PUT", body: JSON.stringify({ status }) });
+  },
 };

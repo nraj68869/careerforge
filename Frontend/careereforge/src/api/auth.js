@@ -18,11 +18,11 @@ export const authApi = {
   });
 },
 
-  register(name, email, password) {
+  register(name, email, password, role) {
     return request("/auth/register", {
       method: "POST",
       auth: false,
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, role }),
     });
   },
 

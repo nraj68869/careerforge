@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useRecoilState } from "recoil";
 import { usersApi } from "../api/user";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Icon from "../components/Icon";
 import PasswordInput from "../components/PasswordInput";
 import Sidebar from "../components/Sidebar";
 import { currentUserState } from "../state/authState";
+import PendingRecruiters from "../components/PendingRecruiters";
 import {
   noticeState,
   pageState,
@@ -16,7 +17,8 @@ import {
 import { useUsers } from "../state/useUsers";
 import "../App.css";
 
-const ROLES = ["STUDENT", "RECRUITER", "PLACEMENT_OFFICER", "ADMIN"];
+// ADMIN is deliberately missing: the platform has exactly one administrator
+const ASSIGNABLE_ROLES = ["STUDENT", "RECRUITER", "PLACEMENT_OFFICER"];
 const initialForm = { name: "", email: "", password: "", role: "STUDENT" };
 
 const DIST = [
@@ -41,7 +43,7 @@ function greeting() {
   return "Good evening";
 }
 
-function AdminDashboard({ onLogout, onOpenAccount }) {
+function AdminDashboard({ onOpenAccount }) {
   const [currentUser, setCurrentUser] = useRecoilState(currentUserState);
   const [searchInput, setSearchInput] = useRecoilState(searchInputState);
   const [search, setSearch] = useRecoilState(searchState);
@@ -221,8 +223,7 @@ function AdminDashboard({ onLogout, onOpenAccount }) {
 
   return (
     <div className="app-shell">
-      <Sidebar onLogout={onLogout} onOpenAccount={onOpenAccount}
-               userCount={stats?.total ?? pageInfo.totalElements} />
+      <Sidebar />
 
       <main className="main-content" id="overview">
         <header className="topbar">
@@ -257,6 +258,7 @@ function AdminDashboard({ onLogout, onOpenAccount }) {
               <button onClick={() => setActionError("")} aria-label="Dismiss error">×</button>
             </div>
           )}
+          <PendingRecruiters reloadKey={reloadKey} onChanged={reload} />
 
           {showForm && (
             <section className="form-panel">
@@ -282,7 +284,7 @@ function AdminDashboard({ onLogout, onOpenAccount }) {
                     </label>
                     <label>Role
                       <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                        {ROLES.map((r) => <option key={r} value={r}>{formatRole(r)}</option>)}
+                        {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{formatRole(r)}</option>)}
                       </select>
                     </label>
                   </>
@@ -382,13 +384,23 @@ function AdminDashboard({ onLogout, onOpenAccount }) {
                           </div>
                         </td>
                         <td>
-                          <select className="role-select" value={user.role} disabled={isMe || busy}
+                          <select className="role-select" value={user.role} disabled={isMe || busy || user.role === "ADMIN"}
                                   onChange={(e) => requestRoleChange(user, e.target.value)}
                                   aria-label={`Role for ${user.name}`}>
-                            {ROLES.map((r) => <option key={r} value={r}>{formatRole(r)}</option>)}
+                            {(user.role === "ADMIN" ? [...ASSIGNABLE_ROLES, "ADMIN"] : ASSIGNABLE_ROLES).map((r) => (
+                              <option key={r} value={r}>{formatRole(r)}</option>
+                            ))}
                           </select>
                         </td>
                         <td><span className={`status-pill ${disabled ? "off" : "on"}`}>{disabled ? "Disabled" : "Active"}</span></td>
+                        <td>
+                          <div className="status-cell">
+                            <span className={`status-pill ${disabled ? "off" : "on"}`}>{disabled ? "Disabled" : "Active"}</span>
+                            {user.role === "RECRUITER" && user.approvalStatus && user.approvalStatus !== "APPROVED" && (
+                              <span className="status-pill warn">{user.approvalStatus === "PENDING" ? "Pending approval" : "Rejected"}</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="actions-cell">
                           <div className="row-actions">
                             <button className="text-button" onClick={() => openEdit(user)}>Edit</button>

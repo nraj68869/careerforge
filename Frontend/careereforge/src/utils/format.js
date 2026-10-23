@@ -8,8 +8,17 @@ const TYPE_LABELS = {
   PART_TIME: "Part-time",
   CONTRACT: "Contract",
 };
+const STATUS_LABELS = {
+  APPLIED: "Applied",
+  SHORTLISTED: "Shortlisted",
+  SELECTED: "Selected",
+  REJECTED: "Rejected",
+  WITHDRAWN: "Withdrawn",
+};
 export const JOB_TYPES = Object.keys(TYPE_LABELS);
 export const formatType = (type) => TYPE_LABELS[type] ?? type;
+export const STATUS_OPTIONS = Object.keys(STATUS_LABELS);
+export const formatStatus = (status) => STATUS_LABELS[status] ?? status;
 
 const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
@@ -47,4 +56,11 @@ export function todayIso() {
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${month}-${day}`;
+}
+
+export function initials(name = "") {
+  return name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
+}
+export function safeUrl(url) {
+  return typeof url === "string" && /^https?:\/\//i.test(url.trim()) ? url.trim() : null;
 }

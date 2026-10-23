@@ -9,7 +9,9 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.core.annotation.Order;
 
+@Order(2)
 @Component
 public class AdminSeeder implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(AdminSeeder.class);

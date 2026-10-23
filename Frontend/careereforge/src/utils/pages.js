@@ -3,13 +3,16 @@ const ALLOWED = {
   dashboard: ["ADMIN"],
   jobs: ["STUDENT", "PLACEMENT_OFFICER", "ADMIN"],
   "my-jobs": ["RECRUITER", "PLACEMENT_OFFICER", "ADMIN"],
+  "my-applications": ["STUDENT"],
+  profile: ["STUDENT"],
+  applications: ["PLACEMENT_OFFICER", "ADMIN"],
   account: ["STUDENT", "RECRUITER", "PLACEMENT_OFFICER", "ADMIN"],
 };
 
 const DEFAULT_PAGE = {
   ADMIN: "dashboard",
   STUDENT: "jobs",
-  PLACEMENT_OFFICER: "jobs",
+  PLACEMENT_OFFICER: "applications",
   RECRUITER: "my-jobs",
 };
 

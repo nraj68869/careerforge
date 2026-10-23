@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
+import { applicationsApi } from "../api/applications";
 import { jobsApi } from "../api/jobs";
 import { useApp } from "../context/AppContext";
 import { JOB_TYPES, daysLeft, deadlineText, formatSalary, formatType } from "../utils/format";
+import ApplicantsModal from "./ApplicantsModal";
+import ApplyModal from "./ApplyModal";
 import ConfirmDialog from "./ConfirmDialog";
 import JobDetailModal from "./JobDetailModal";
 import JobFormModal from "./JobFormModal";
+import StatusBadge from "./StatusBadge";
+import ProfileNudge from "./ProfileNudge";
 
 const PAGE_SIZE = 9;
 
@@ -33,6 +38,8 @@ export default function JobBoard({ mode }) {
 
   const [formJob, setFormJob] = useState(undefined);   // undefined = closed, null = new job, object = editing
   const [viewJob, setViewJob] = useState(null);
+  const [applyJob, setApplyJob] = useState(null);
+  const [applicantsJob, setApplicantsJob] = useState(null);
   const [confirmState, setConfirmState] = useState(null);
   const [workingId, setWorkingId] = useState(null);
 
@@ -68,6 +75,10 @@ export default function JobBoard({ mode }) {
     user.role === "PLACEMENT_OFFICER" ||
     (user.role === "RECRUITER" && job.postedById === user.id);
 
+  const canApply = (job) =>
+    isStudent && job.acceptingApplications &&
+    (!job.myApplicationStatus || job.myApplicationStatus === "WITHDRAWN");
+
   function clearFilters() {
     setQ(""); setDebouncedQ(""); setType(""); setStatus(""); setPage(0);
   }
@@ -83,6 +94,13 @@ export default function JobBoard({ mode }) {
     }
     setFormJob(undefined);
     setViewJob(null);
+    reload();
+  }
+
+  async function submitApplication(coverNote) {
+    await applicationsApi.apply(applyJob.id, coverNote);
+    setApplyJob(null);
+    setNotice("Application submitted. Track it under My applications.");
     reload();
   }
 
@@ -108,7 +126,7 @@ export default function JobBoard({ mode }) {
       title: reopen ? "Reopen this job?" : "Close this job?",
       message: reopen
         ? "Students will be able to see it again, if its deadline has not passed."
-        : "Students will no longer see this job. You can reopen it later.",
+        : "Students will no longer see this job or be able to apply. You can reopen it later.",
       confirmLabel: reopen ? "Reopen" : "Close job",
       danger: !reopen,
       onConfirm: () => runAction(job.id, () => jobsApi.setStatus(job.id, reopen ? "OPEN" : "CLOSED"),
@@ -119,7 +137,7 @@ export default function JobBoard({ mode }) {
   function requestDelete(job) {
     setConfirmState({
       title: `Delete "${job.title}"?`,
-      message: "This permanently deletes the job. This action cannot be undone.",
+      message: "This permanently deletes the job. Jobs that already have applications cannot be deleted. Close them instead.",
       confirmLabel: "Delete job",
       danger: true,
       onConfirm: async () => {
@@ -150,6 +168,7 @@ export default function JobBoard({ mode }) {
           </button>
         )}
       </section>
+      {isStudent && !isMine && <ProfileNudge />}
 
       {notice && (
         <div className="alert alert-success" role="status">
@@ -225,11 +244,22 @@ export default function JobBoard({ mode }) {
 
                 <div className="job-card-foot">
                   <span className={`deadline${left >= 0 && left <= 3 ? " soon" : ""}`}>{deadlineText(job.deadline)}</span>
-                  {!isStudent && <span className={`status-pill ${pill.cls}`}>{pill.label}</span>}
+                  {isStudent
+                    ? job.myApplicationStatus && <StatusBadge status={job.myApplicationStatus} />
+                    : <span className={`status-pill ${pill.cls}`}>{pill.label}</span>}
                 </div>
+
+                {isStudent && canApply(job) && (
+                  <div className="job-card-actions">
+                    <button className="button button-primary small" onClick={() => setApplyJob(job)}>
+                      {job.myApplicationStatus === "WITHDRAWN" ? "Apply again" : "Apply now"}
+                    </button>
+                  </div>
+                )}
 
                 {manage && (
                   <div className="job-card-actions">
+                    <button className="button button-primary small" onClick={() => setApplicantsJob(job)}>Applicants</button>
                     <button className="text-button" onClick={() => setFormJob(job)}>Edit</button>
                     <button className="text-button" onClick={() => requestToggle(job)} disabled={workingId === job.id}>
                       {job.status === "CLOSED" ? "Reopen" : "Close"}
@@ -258,18 +288,34 @@ export default function JobBoard({ mode }) {
         <JobDetailModal job={viewJob} onClose={() => setViewJob(null)}>
           {canManage(viewJob) ? (
             <>
+              <button className="button button-primary" onClick={() => { const j = viewJob; setViewJob(null); setApplicantsJob(j); }}>Applicants</button>
               <button className="button button-secondary" onClick={() => { const j = viewJob; setViewJob(null); setFormJob(j); }}>Edit</button>
               <button className="button button-secondary" onClick={() => requestToggle(viewJob)}>
                 {viewJob.status === "CLOSED" ? "Reopen" : "Close job"}
               </button>
               <button className="button button-danger" onClick={() => requestDelete(viewJob)}>Delete</button>
             </>
-          ) : (
-            <button className="button button-primary" disabled title="Applications arrive in the next update">
-              Apply (coming soon)
+          ) : canApply(viewJob) ? (
+            <button className="button button-primary" onClick={() => { const j = viewJob; setViewJob(null); setApplyJob(j); }}>
+              {viewJob.myApplicationStatus === "WITHDRAWN" ? "Apply again" : "Apply now"}
             </button>
+          ) : viewJob.myApplicationStatus && viewJob.myApplicationStatus !== "WITHDRAWN" ? (
+            <>
+              <StatusBadge status={viewJob.myApplicationStatus} />
+              <a className="button button-secondary" href="#/my-applications">View my applications</a>
+            </>
+          ) : (
+            <button className="button button-secondary" disabled>Not accepting applications</button>
           )}
         </JobDetailModal>
+      )}
+
+      {applyJob && (
+        <ApplyModal job={applyJob} onSubmit={submitApplication} onClose={() => setApplyJob(null)} />
+      )}
+
+      {applicantsJob && (
+        <ApplicantsModal job={applicantsJob} onClose={() => setApplicantsJob(null)} />
       )}
 
       {formJob !== undefined && (

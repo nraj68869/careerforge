@@ -7,7 +7,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import com.careerforge.backend.entity.JobStatus;
 import java.util.Optional;
 
 public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
@@ -21,4 +24,10 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     Optional<Job> findWithPosterById(Long id);
 
     boolean existsByPostedById(Long userId);
+    long countByStatus(JobStatus status);
+
+    @Modifying
+    @Query("update Job j set j.status = com.careerforge.backend.entity.JobStatus.CLOSED "
+            + "where j.postedBy.id = :userId and j.status = com.careerforge.backend.entity.JobStatus.OPEN")
+    int closeOpenJobsOf(@Param("userId") Long userId);
 }

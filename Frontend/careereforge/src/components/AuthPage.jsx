@@ -8,6 +8,10 @@ const FEATURES = [
   { icon: "lock", title: "Secure sessions", text: "Signed tokens, instant logout and lockout after repeated failed logins." },
   { icon: "briefcase", title: "Built for placement teams", text: "Manage students today, with jobs and applications on the way." },
 ];
+const ACCOUNT_TYPES = [
+  { value: "STUDENT", label: "Student", hint: "Find jobs and apply" },
+  { value: "RECRUITER", label: "Recruiter", hint: "Post jobs . needs approval" },
+];
 
 function Brand() {
   return (
@@ -20,10 +24,10 @@ function Brand() {
 
 export default function AuthPage({ onLoggedIn, message }) {
   const [mode, setMode] = useState("login");
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "STUDENT" });
 
   const isLogin = mode === "login";
   const setField = (field) => (e) => setForm({ ...form, [field]: e.target.value });
@@ -52,10 +56,13 @@ export default function AuthPage({ onLoggedIn, message }) {
         const user = await authApi.login(form.email.trim(), form.password);
         onLoggedIn(user);
       } else {
-        await authApi.register(form.name.trim(), form.email.trim(), form.password);
+        const wasRecruiter = form.role === "RECRUITER";
+        await authApi.register(form.name.trim(), form.email.trim(), form.password, form.role);
         setMode("login");
-        setForm({ name: "", email: form.email.trim(), password: "" });
-        setInfo("Account created. Please log in.");
+        setForm({ name: "", email: form.email.trim(), password: "", role: "STUDENT" });
+        setInfo(wasRecruiter
+        ? "Account created. The administrator must approve your recruiter account before you can post jobs. You can log in to check."
+        : "Account created. Please log in.");
       }
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -112,6 +119,18 @@ export default function AuthPage({ onLoggedIn, message }) {
           {error && <div className="alert alert-error" role="alert"><span>{error}</span></div>}
 
           <form className="auth-form" onSubmit={handleSubmit}>
+            {!isLogin && (
+              <div className="role-picker" role="radiogroup" aria-label="I am registering as">
+                {ACCOUNT_TYPES.map((t) => (
+                  <button type="button" key={t.value} role="radio" aria-checked={form.role === t.value}
+                          className={form.role === t.value ? "selected" : ""}
+                          onClick={() => setForm({ ...form, role: t.value })}>
+                    <strong>{t.label}</strong>
+                    <span>{t.hint}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {!isLogin && (
               <label>Full name
                 <div className="input-wrap has-icon">

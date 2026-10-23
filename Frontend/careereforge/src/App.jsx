@@ -11,6 +11,8 @@ import JobsPage from "./pages/JobsPage";
 import MyJobsPage from "./pages/MyJobsPage";
 import ProfilePage from "./pages/ProfilePage";
 import { authReadyState, currentUserState } from "./state/authState";
+import PendingApprovalPage from "./pages/PendingApprovalPage";
+import StudentProfilePage from "./pages/StudentProfilePage";
 import {
   noticeState,
   pageState,
@@ -20,6 +22,8 @@ import {
 } from "./state/userState";
 import { resolvePage } from "./utils/pages";
 import "./App.css";
+import ApplicationsPage from "./pages/ApplicationsPage";
+import MyApplicationsPage from "./pages/MyApplicationsPage";
 
 function App() {
   const [user, setUser] = useRecoilState(currentUserState);
@@ -87,17 +91,25 @@ function App() {
 
   if (!ready) return <div className="auth-loading">Loading…</div>;
   if (!user) return <AuthPage onLoggedIn={handleLoggedIn} message={sessionMessage} />;
-
+  if (user.role === "RECRUITER" && user.approvalStatus !== "APPROVED") {
+  return <PendingApprovalPage onLogout={handleLogout} />;
+}
   const page = resolvePage(route, user.role);
   const context = { user, page, navigate, logout: handleLogout };
 
-  let content;
+    let content;
   if (page === "dashboard") {
     content = <AdminDashboard onLogout={handleLogout} onOpenAccount={() => navigate("account")} />;
   } else if (page === "jobs") {
     content = <JobsPage />;
   } else if (page === "my-jobs") {
     content = <MyJobsPage />;
+  } else if (page === "my-applications") {
+    content = <MyApplicationsPage />;
+  } else if (page === "applications") {
+    content = <ApplicationsPage />;
+    } else if (page === "profile") {
+  content = <StudentProfilePage />;
   } else {
     content = <ProfilePage onPasswordChanged={handlePasswordChanged} />;
   }
