@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { JOB_TYPES, formatType, todayIso } from "../utils/format";
+import SkillsInput from "./SkillsInput";
 
 const EMPTY = {
   title: "", company: "", location: "", type: "FULL_TIME",
-  description: "", salaryMin: "", salaryMax: "", deadline: "",
+  description: "", salaryMin: "", salaryMax: "", deadline: "", minCgpa: "",
 };
 
 export default function JobFormModal({ job, onSave, onClose }) {
   const [form, setForm] = useState(job ? {
     title: job.title, company: job.company, location: job.location, type: job.type,
     description: job.description, salaryMin: job.salaryMin ?? "", salaryMax: job.salaryMax ?? "",
-    deadline: job.deadline,
+    deadline: job.deadline, minCgpa: job.minCgpa ?? "",
   } : EMPTY);
+  const [skills, setSkills] = useState(job?.requiredSkills ?? []);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -45,6 +47,8 @@ export default function JobFormModal({ job, onSave, onClose }) {
         salaryMin: min,
         salaryMax: max,
         deadline: form.deadline,
+        requiredSkills: skills,
+        minCgpa: form.minCgpa === "" ? null : Number(form.minCgpa),
       });
     } catch (err) {
       setError(err.message || "The job could not be saved.");
@@ -84,6 +88,16 @@ export default function JobFormModal({ job, onSave, onClose }) {
           <label>Maximum salary (₹ / year, optional)
             <input type="number" min="0" value={form.salaryMax} onChange={set("salaryMax")} />
           </label>
+
+          <div className="field full">
+            <span className="field-label">Required skills (used to calculate each student's match)</span>
+            <SkillsInput value={skills} onChange={setSkills} max={15} />
+          </div>
+          <label>Minimum CGPA (optional)
+            <input type="number" min="0" max="10" step="0.01" value={form.minCgpa} onChange={set("minCgpa")}
+                   placeholder="e.g. 7.5" />
+          </label>
+
           <label className="full">Description
             <textarea value={form.description} onChange={set("description")} minLength={20} maxLength={5000}
                       placeholder="What will the person do? What skills are needed?" required />

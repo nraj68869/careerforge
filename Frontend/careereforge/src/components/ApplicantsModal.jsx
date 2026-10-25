@@ -7,6 +7,7 @@ const PAGE_SIZE = 8;
 
 export default function ApplicantsModal({ job, onClose }) {
   const [status, setStatus] = useState("");
+  const [sort, setSort] = useState("newest");
   const [page, setPage] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
   const [data, setData] = useState(null);
@@ -16,12 +17,12 @@ export default function ApplicantsModal({ job, onClose }) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    applicationsApi.forJob(job.id, { status, page, size: PAGE_SIZE })
+    applicationsApi.forJob(job.id, { status,sort, page, size: PAGE_SIZE })
       .then((result) => { if (!cancelled) { setData(result); setError(""); } })
       .catch((err) => { if (!cancelled) setError(err.message || "Applicants could not be loaded."); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [job.id, status, page, reloadKey]);
+  }, [job.id, status,sort, page, reloadKey]);
 
   const items = data?.content ?? [];
   const total = data?.totalElements ?? 0;
@@ -45,6 +46,10 @@ export default function ApplicantsModal({ job, onClose }) {
             <option value="">All statuses</option>
             {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{formatStatus(s)}</option>)}
           </select>
+          <select aria-label="Sort applicants" value={sort} onChange={(e) => { setSort(e.target.value); setPage(0); }}>
+          <option value="newest">Latest activity</option>
+          <option value="match">Best match first</option>
+        </select>
           <span className="muted-text">{total} application{total === 1 ? "" : "s"}</span>
         </div>
 

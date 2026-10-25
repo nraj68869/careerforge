@@ -11,11 +11,11 @@ import com.careerforge.backend.entity.ApprovalStatus;
 import com.careerforge.backend.entity.Role;
 import com.careerforge.backend.entity.User;
 import com.careerforge.backend.exception.ApiException;
+import com.careerforge.backend.entity.NotificationType;
 import com.careerforge.backend.exception.DuplicateEmailException;
 import com.careerforge.backend.exception.ForbiddenOperationException;
 import com.careerforge.backend.exception.UserNotFoundException;
 import com.careerforge.backend.security.AuthUser;
-import com.careerforge.backend.Repository.StudentProfileRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,16 +33,19 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JobRepository jobRepository;
     private final JobApplicationRepository applicationRepository;
-    private final StudentProfileRepository profileRepository;
+    private final ProfileService profileService;
+    private final NotificationService notificationService;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                       JobRepository jobRepository, JobApplicationRepository applicationRepository,StudentProfileRepository profileRepository) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jobRepository = jobRepository;
-        this.applicationRepository = applicationRepository;
-        this.profileRepository = profileRepository;
-    }
+                   JobRepository jobRepository, JobApplicationRepository applicationRepository,
+                   ProfileService profileService, NotificationService notificationService) {
+    this.userRepository = userRepository;
+    this.passwordEncoder = passwordEncoder;
+    this.jobRepository = jobRepository;
+    this.applicationRepository = applicationRepository;
+    this.profileService = profileService;
+    this.notificationService = notificationService;
+}
 
     public UserResponse createUser(AdminCreateUserRequest request) {
         if (request.role() == Role.ADMIN) {
@@ -118,7 +121,8 @@ public class UserService {
             throw new ApiException(HttpStatus.CONFLICT,
                     "This student has applications. Disable the account instead of deleting it.");
         }
-        profileRepository.deleteByUserId(id);
+        profileService.deleteFor(id);
+        notificationService.deleteFor(id);
         userRepository.delete(findOrThrow(id));
     }
 
@@ -153,6 +157,13 @@ public class UserService {
         }
         user.setApprovalStatus(status);
         User saved = userRepository.save(user);
+        if (status == ApprovalStatus.APPROVED) {
+            notificationService.send(id, NotificationType.ACCOUNT, "Your recruiter account was approved",
+                    "You can now post jobs that students will see.", "my-jobs");
+        } else {
+            notificationService.send(id, NotificationType.ACCOUNT, "Your recruiter account was not approved",
+                    "Contact the administrator if you think this is a mistake.", "account");
+        }
         if (status == ApprovalStatus.REJECTED) {
             jobRepository.closeOpenJobsOf(id);   // scam jobs disappear from students' view at once
         }

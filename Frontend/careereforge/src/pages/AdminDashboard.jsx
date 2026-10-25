@@ -16,6 +16,7 @@ import {
 } from "../state/userState";
 import { useUsers } from "../state/useUsers";
 import "../App.css";
+import NotificationBell from "../components/NotificationBell";
 
 // ADMIN is deliberately missing: the platform has exactly one administrator
 const ASSIGNABLE_ROLES = ["STUDENT", "RECRUITER", "PLACEMENT_OFFICER"];
@@ -231,6 +232,13 @@ function AdminDashboard({ onOpenAccount }) {
           <button className="user-chip" onClick={onOpenAccount} title="My account">
             <span className="chip-avatar">{currentUser?.name?.charAt(0).toUpperCase()}</span>
             <span className="chip-copy"><strong>{currentUser?.name}</strong><span>{formatRole(currentUser?.role)}</span></span>
+            <div className="topbar-right">
+            <NotificationBell />
+            <button className="user-chip" onClick={onOpenAccount} title="My account">
+              <span className="chip-avatar">{currentUser?.name?.charAt(0).toUpperCase()}</span>
+              <span className="chip-copy"><strong>{currentUser?.name}</strong><span>{formatRole(currentUser?.role)}</span></span>
+            </button>
+          </div>
           </button>
         </header>
 

@@ -8,6 +8,11 @@ import lombok.Setter;
 import java.time.Instant;
 import java.time.LocalDate;
 
+import org.hibernate.annotations.BatchSize;
+import java.math.BigDecimal;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "jobs")
 @Getter
@@ -51,4 +56,13 @@ public class Job {
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "job_required_skills", joinColumns = @JoinColumn(name = "job_id"))
+    @Column(name = "skill", length = 40, nullable = false)
+    @BatchSize(size = 50)
+    private Set<String> requiredSkills = new LinkedHashSet<>();
+
+    @Column(precision = 4, scale = 2)
+    private BigDecimal minCgpa;
 }

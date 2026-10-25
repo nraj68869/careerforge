@@ -10,11 +10,14 @@ import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.BatchSize;
+
 @Entity
 @Table(name = "student_profiles")
 @Getter
 @Setter
 @NoArgsConstructor
+@BatchSize(size = 50)
 public class StudentProfile {
 
     @Id
@@ -42,6 +45,12 @@ public class StudentProfile {
 
     @Column(length = 500)
     private String resumeUrl;
+
+    @Column(length = 64)
+    private String resumeFile;
+
+    @Column(length = 120)
+    private String resumeOriginalName; 
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "student_profile_skills", joinColumns = @JoinColumn(name = "profile_id"))

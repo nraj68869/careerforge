@@ -10,6 +10,7 @@ import JobDetailModal from "./JobDetailModal";
 import JobFormModal from "./JobFormModal";
 import StatusBadge from "./StatusBadge";
 import ProfileNudge from "./ProfileNudge";
+import MatchPill from "./MatchPill";
 
 const PAGE_SIZE = 9;
 
@@ -28,6 +29,7 @@ export default function JobBoard({ mode }) {
   const [debouncedQ, setDebouncedQ] = useState("");
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
+  const [sort, setSort] = useState("newest");
   const [page, setPage] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -57,12 +59,12 @@ export default function JobBoard({ mode }) {
     let cancelled = false;
     setLoading(true);
     const load = isMine ? jobsApi.mine : jobsApi.browse;
-    load({ q: debouncedQ, type, status, page, size: PAGE_SIZE })
+    load({ q: debouncedQ, type, status, page, size: PAGE_SIZE, sort: isStudent && !isMine ? sort : "" })
       .then((result) => { if (!cancelled) { setData(result); setError(""); } })
       .catch((err) => { if (!cancelled) setError(err.message || "Jobs could not be loaded."); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [isMine, debouncedQ, type, status, page, reloadKey]);
+  }, [isMine, isStudent, debouncedQ, type, status, sort, page, reloadKey]);
 
   const jobs = data?.content ?? [];
   const total = data?.totalElements ?? 0;
@@ -190,6 +192,12 @@ export default function JobBoard({ mode }) {
                  onChange={(e) => setQ(e.target.value)} />
         </label>
         <select aria-label="Job type" value={type} onChange={(e) => { setType(e.target.value); setPage(0); }}>
+          {isStudent && !isMine && (
+          <select aria-label="Sort jobs" value={sort} onChange={(e) => { setSort(e.target.value); setPage(0); }}>
+            <option value="newest">Newest first</option>
+            <option value="match">Best match first</option>
+          </select>
+        )}
           <option value="">All types</option>
           {JOB_TYPES.map((t) => <option key={t} value={t}>{formatType(t)}</option>)}
         </select>
@@ -238,6 +246,8 @@ export default function JobBoard({ mode }) {
                   <div className="job-chips">
                     <span className="chip">{job.location}</span>
                     <span className="chip type">{formatType(job.type)}</span>
+                    {isStudent && <MatchPill match={job.match} />}
+                    
                   </div>
                   <div className="job-salary">{formatSalary(job.salaryMin, job.salaryMax)}</div>
                 </button>

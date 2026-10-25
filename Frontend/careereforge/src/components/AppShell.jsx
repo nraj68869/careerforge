@@ -1,5 +1,6 @@
 import { useApp } from "../context/AppContext";
 import { formatRole } from "../utils/format";
+import NotificationBell from "./NotificationBell";
 import Sidebar from "./Sidebar";
 
 export default function AppShell({ title, children }) {
@@ -13,10 +14,13 @@ export default function AppShell({ title, children }) {
           <div className="breadcrumbs">
             <span>Workspace</span><span className="crumb-slash">/</span><strong>{title}</strong>
           </div>
-          <a className="user-chip" href="#/account" title="My account">
-            <span className="chip-avatar">{user.name.charAt(0).toUpperCase()}</span>
-            <span className="chip-copy"><strong>{user.name}</strong><span>{formatRole(user.role)}</span></span>
-          </a>
+          <div className="topbar-right">
+            <NotificationBell />
+            <a className="user-chip" href="#/account" title="My account">
+              <span className="chip-avatar">{user.name.charAt(0).toUpperCase()}</span>
+              <span className="chip-copy"><strong>{user.name}</strong><span>{formatRole(user.role)}</span></span>
+            </a>
+          </div>
         </header>
         <div className="page-content">{children}</div>
       </main>

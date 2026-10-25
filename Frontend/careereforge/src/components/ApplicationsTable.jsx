@@ -5,6 +5,7 @@ import { formatDate, formatStatus, initials } from "../utils/format";
 import ConfirmDialog from "./ConfirmDialog";
 import StatusBadge from "./StatusBadge";
 import StudentProfileModal from "./StudentProfileModal";
+import MatchPill from "./MatchPill";
 
 function actionLabel(current, next) {
   if (next === "SHORTLISTED") return current === "REJECTED" ? "Reconsider" : "Shortlist";
@@ -66,6 +67,7 @@ export default function ApplicationsTable({ items, showJob = false, onChanged })
               <th>STUDENT</th>
               {showJob && <th>JOB</th>}
               <th>APPLIED ON</th>
+              <th>MATCH</th>
               <th>STATUS</th>
               <th className="actions-heading">ACTIONS</th>
             </tr>
@@ -102,6 +104,7 @@ export default function ApplicationsTable({ items, showJob = false, onChanged })
                     </td>
                   )}
                   <td>{formatDate(a.appliedAt.slice(0, 10))}</td>
+                  <td>{a.match ? <MatchPill match={a.match} /> : <span className="muted-text">—</span>}</td>
                   <td><StatusBadge status={a.status} /></td>
                   <td className="actions-cell">
                     <div className="row-actions">

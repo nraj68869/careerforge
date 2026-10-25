@@ -1,9 +1,9 @@
 import { useState } from "react";
 
-const MAX_SKILLS = 20;
+
 const MAX_LENGTH = 40;
 
-export default function SkillsInput({ value, onChange }) {
+export default function SkillsInput({ value, onChange, max = 20 }) {
   const [draft, setDraft] = useState("");
   const [hint, setHint] = useState("");
 
@@ -19,8 +19,8 @@ export default function SkillsInput({ value, onChange }) {
       setHint("");
       return;
     }
-    if (value.length >= MAX_SKILLS) {
-      setHint(`You can add up to ${MAX_SKILLS} skills.`);
+    if (value.length >= max) {
+      setHint(`You can add up to ${max} skills.`);
       return;
     }
     onChange([...value, skill]);
@@ -51,7 +51,7 @@ export default function SkillsInput({ value, onChange }) {
                onBlur={() => add(draft)}
                placeholder={value.length ? "Add another…" : "Type a skill and press Enter"} />
       </div>
-      <span className="char-count">{value.length} / {MAX_SKILLS} skills{hint && ` · ${hint}`}</span>
+      <span className="char-count">{value.length} / {max} skills{hint && ` · ${hint}`}</span>
     </div>
   );
 }

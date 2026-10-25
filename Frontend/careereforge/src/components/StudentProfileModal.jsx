@@ -20,7 +20,15 @@ export default function StudentProfileModal({ studentId, onClose }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const resume = safeUrl(profile?.resumeUrl);
+  async function openPdf() {
+    try {
+      await profileApi.viewStudentResume(studentId);
+    } catch (err) {
+      setError(err.message || "The resume could not be opened.");
+    }
+  }
+
+  const link = safeUrl(profile?.resumeUrl);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -37,9 +45,7 @@ export default function StudentProfileModal({ studentId, onClose }) {
         {error && <div className="alert alert-error" role="alert"><span>{error}</span></div>}
         {!profile && !error && <div className="table-state"><span className="spinner" /><span>Loading profile…</span></div>}
 
-        {profile && profile.completeness === 0 && (
-          <p>This student has not filled in their profile yet.</p>
-        )}
+        {profile && profile.completeness === 0 && <p>This student has not filled in their profile yet.</p>}
 
         {profile && profile.completeness > 0 && (
           <>
@@ -69,10 +75,11 @@ export default function StudentProfileModal({ studentId, onClose }) {
         )}
 
         <div className="modal-actions">
-          {resume && (
-            <a className="button button-primary" href={resume} target="_blank" rel="noopener noreferrer">
-              View resume
-            </a>
+          {profile?.hasResumeFile && (
+            <button className="button button-primary" onClick={openPdf}>View resume (PDF)</button>
+          )}
+          {link && (
+            <a className="button button-secondary" href={link} target="_blank" rel="noopener noreferrer">Resume link</a>
           )}
           <button className="button button-secondary" onClick={onClose}>Close</button>
         </div>

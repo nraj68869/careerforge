@@ -10,5 +10,5 @@ public record ApplicationResponse(
         Long id, Long jobId, String jobTitle, String company, JobStatus jobStatus,
         Long studentId, String studentName, String studentEmail,
         ApplicationStatus status, String coverNote, Instant appliedAt, Instant updatedAt,
-        List<ApplicationStatus> nextStatuses,   // what a recruiter/officer may move it to
-        boolean canWithdraw) {}                 // whether the student may withdraw
+        List<ApplicationStatus> nextStatuses, boolean canWithdraw,
+        MatchInfo match) {}   // match is filled for recruiters, officers and admins

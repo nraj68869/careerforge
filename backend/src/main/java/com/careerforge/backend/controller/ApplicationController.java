@@ -13,6 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api")
@@ -52,9 +55,10 @@ public class ApplicationController {
     @PreAuthorize("hasAnyRole('RECRUITER','PLACEMENT_OFFICER','ADMIN')")
     public Page<ApplicationResponse> forJob(@AuthenticationPrincipal AuthUser actor, @PathVariable Long jobId,
                                             @RequestParam(required = false) ApplicationStatus status,
+                                            @RequestParam(required = false) String sort,
                                             @RequestParam(defaultValue = "0") int page,
                                             @RequestParam(defaultValue = "10") int size) {
-        return applicationService.forJob(actor, jobId, status, page, size);
+        return applicationService.forJob(actor, jobId, status, sort, page, size);
     }
 
     @PutMapping("/applications/{id}/status")
@@ -80,5 +84,14 @@ public class ApplicationController {
     @PreAuthorize("hasAnyRole('PLACEMENT_OFFICER','ADMIN')")
     public ApplicationStatsResponse stats() {
         return applicationService.stats();
+    }
+
+    @GetMapping("/applications/export")
+    @PreAuthorize("hasAnyRole('PLACEMENT_OFFICER','ADMIN')")
+    public ResponseEntity<byte[]> export() {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"careerforge-applications.csv\"")
+                .body(applicationService.exportCsv());
     }
 }

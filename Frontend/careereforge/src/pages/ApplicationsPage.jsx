@@ -4,6 +4,7 @@ import AppShell from "../components/AppShell";
 import ApplicationsTable from "../components/ApplicationsTable";
 import Icon from "../components/Icon";
 import { STATUS_OPTIONS, formatStatus } from "../utils/format";
+import { saveBlob } from "../utils/download";
 
 const PAGE_SIZE = 10;
 const PIPELINE = [
@@ -24,6 +25,7 @@ export default function ApplicationsPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { setDebouncedQ(q.trim()); setPage(0); }, 300);
@@ -60,6 +62,17 @@ export default function ApplicationsPage() {
     { label: "SHORTLISTED", value: stats?.shortlisted, foot: "In the pipeline", icon: "check", tone: "teal" },
     { label: "STUDENTS PLACED", value: stats?.studentsPlaced, foot: "Selected for a job", icon: "shield", tone: "rose" },
   ];
+  async function exportCsv() {
+  setExporting(true);
+  try {
+    saveBlob(await applicationsApi.exportCsv(), "careerforge-applications.csv");
+  } catch (err) {
+    setError(err.message || "The export failed.");
+  } finally {
+    setExporting(false);
+  }
+}
+
 
   return (
     <AppShell title="Applications">
@@ -71,6 +84,9 @@ export default function ApplicationsPage() {
             Every application across the platform{stats ? ` · ${stats.openJobs} open job${stats.openJobs === 1 ? "" : "s"}` : ""}.
           </p>
         </div>
+        <button className="button button-secondary" onClick={exportCsv} disabled={exporting}>
+        {exporting ? "Preparing…" : "Export CSV"}
+      </button>
       </section>
 
       <section className="stats-grid four" aria-label="Statistics">

@@ -1,4 +1,4 @@
-import { request } from "./client";
+import { request, requestBlob } from "./client";
 
 function toQuery(params) {
   const search = new URLSearchParams();
@@ -20,4 +20,5 @@ export const applicationsApi = {
     return request(`/applications/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) });
   },
   stats() { return request("/applications/stats"); },
+  exportCsv() { return requestBlob("/applications/export"); },
 };

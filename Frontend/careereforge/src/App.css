@@ -495,3 +495,39 @@ a.button { display: inline-flex; align-items: center; justify-content: center; t
 .nudge { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 14px 18px; margin-bottom: 20px; border: 1px solid #bef264; border-radius: 12px; background: #f7fee7; }
 .nudge strong { color: #365314; }
 .nudge span { color: #4d7c0f; font-size: 13px; }
+
+/* ===== Match scores, resume upload ===== */
+.match-pill { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.match-pill.high { background: #dcfce7; color: #15803d; }
+.match-pill.mid { background: #fef3c7; color: #b45309; }
+.match-pill.low { background: #f1f5f9; color: #64748b; }
+
+.skill-chip.static.ok { background: #dcfce7; color: #15803d; }
+.skill-chip.static.miss { background: #f1f5f9; color: #64748b; text-decoration: line-through; text-decoration-color: #cbd5e1; }
+
+.resume-box { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 14px 16px; margin-bottom: 20px; border: 1px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; }
+.resume-info { display: grid; gap: 4px; min-width: 0; }
+.resume-info strong { font-size: 13px; color: #0f172a; }
+.resume-file { font-size: 13px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 320px; }
+.resume-actions { display: flex; align-items: center; gap: 14px; }
+
+/* ===== Notification bell ===== */
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.bell-wrap { position: relative; }
+.bell-button { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid #e2e8f0; border-radius: 50%; background: #fff; color: #334155; cursor: pointer; transition: background .15s; }
+.bell-button:hover { background: #f8fafc; }
+.bell-badge { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 99px; background: #dc2626; color: #fff; font-size: 11px; font-weight: 800; }
+.bell-panel { position: absolute; right: 0; top: 48px; z-index: 40; width: 360px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 16px 40px rgba(15, 23, 42, .18); animation: riseIn .15s ease both; }
+.bell-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
+.bell-head strong { font: 800 14px Manrope, sans-serif; color: #0f172a; }
+.bell-list { list-style: none; margin: 0; padding: 0; max-height: 380px; overflow-y: auto; }
+.bell-item { display: flex; gap: 10px; width: 100%; padding: 12px 16px; border: 0; border-bottom: 1px solid #f8fafc; background: #fff; text-align: left; cursor: pointer; font-family: inherit; }
+.bell-item:hover { background: #f8fafc; }
+.bell-item.unread { background: #f7fee7; }
+.bell-dot { flex: 0 0 8px; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: transparent; }
+.bell-item.unread .bell-dot { background: #65a30d; }
+.bell-text { min-width: 0; }
+.bell-text strong { display: block; font-size: 13px; color: #0f172a; }
+.bell-text span { display: block; margin-top: 2px; font-size: 12px; line-height: 1.45; color: #475569; }
+.bell-text time { display: block; margin-top: 4px; font-size: 11px; color: #94a3b8; }
+.bell-empty { padding: 28px 16px; text-align: center; font-size: 13px; color: #94a3b8; }

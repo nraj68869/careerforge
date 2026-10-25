@@ -2,23 +2,28 @@ package com.careerforge.backend.service;
 
 import com.careerforge.backend.Repository.RevokedTokenRepository;
 import com.careerforge.backend.Repository.UserRepository;
-import com.careerforge.backend.dto.*;
+import com.careerforge.backend.dto.AuthResponse;
+import com.careerforge.backend.dto.ChangePasswordRequest;
+import com.careerforge.backend.dto.LoginRequest;
+import com.careerforge.backend.dto.RegisterRequest;
+import com.careerforge.backend.dto.UserResponse;
+import com.careerforge.backend.entity.ApprovalStatus;
+import com.careerforge.backend.entity.NotificationType;
 import com.careerforge.backend.entity.RevokedToken;
 import com.careerforge.backend.entity.Role;
 import com.careerforge.backend.entity.User;
+import com.careerforge.backend.exception.ApiException;
 import com.careerforge.backend.exception.DuplicateEmailException;
 import com.careerforge.backend.exception.ForbiddenOperationException;
 import com.careerforge.backend.exception.InvalidCredentialsException;
 import com.careerforge.backend.exception.UserNotFoundException;
 import com.careerforge.backend.security.AuthUser;
 import com.careerforge.backend.security.JwtService;
-import com.careerforge.backend.entity.ApprovalStatus;
 import com.careerforge.backend.security.LoginAttemptService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.careerforge.backend.exception.ApiException;
-import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -30,36 +35,47 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final LoginAttemptService loginAttemptService;
+    private final NotificationService notificationService;   // <- this field was missing
     private final String dummyHash;
 
     public AuthService(UserRepository userRepository, RevokedTokenRepository revokedTokenRepository,
                        PasswordEncoder passwordEncoder, JwtService jwtService,
-                       LoginAttemptService loginAttemptService) {
+                       LoginAttemptService loginAttemptService, NotificationService notificationService) {
         this.userRepository = userRepository;
         this.revokedTokenRepository = revokedTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.loginAttemptService = loginAttemptService;
+        this.notificationService = notificationService;
         // a fake hash, so unknown emails cost the same time as real ones (see login)
         this.dummyHash = passwordEncoder.encode("not-a-real-password");
     }
+
+    @Transactional
     public UserResponse register(RegisterRequest req) {
-    Role role = req.role() == null ? Role.STUDENT : req.role();
-    if (role != Role.STUDENT && role != Role.RECRUITER) {
-        throw new ApiException(HttpStatus.BAD_REQUEST, "You can only register as a student or a recruiter");
-    }
+        // only these two account types can be created by the public
+        Role role = req.role() == null ? Role.STUDENT : req.role();
+        if (role != Role.STUDENT && role != Role.RECRUITER) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "You can only register as a student or a recruiter");
+        }
 
-    String email = req.email().trim().toLowerCase();
-    if (userRepository.existsByEmailIgnoreCase(email)) {
-        throw new DuplicateEmailException(email);
-    }
+        String email = req.email().trim().toLowerCase();
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new DuplicateEmailException(email);
+        }
 
-    User user = new User(req.name().trim(), email, passwordEncoder.encode(req.password()), role);
-    if (role == Role.RECRUITER) {
-        user.setApprovalStatus(ApprovalStatus.PENDING);   // an admin must approve recruiters
+        User user = new User(req.name().trim(), email, passwordEncoder.encode(req.password()), role);
+        if (role == Role.RECRUITER) {
+            user.setApprovalStatus(ApprovalStatus.PENDING);   // an admin must approve recruiters
+        }
+        User saved = userRepository.save(user);
+
+        if (role == Role.RECRUITER) {
+            notificationService.sendToAdmins(NotificationType.ACCOUNT, "New recruiter awaiting approval",
+                    saved.getName() + " (" + saved.getEmail() + ") registered as a recruiter.", "dashboard");
+        }
+        return toResponse(saved);
     }
-    return toResponse(userRepository.save(user));
-}  
 
     public AuthResponse login(LoginRequest req, String clientIp) {
         String email = req.email().trim().toLowerCase();
@@ -113,6 +129,7 @@ public class AuthService {
     }
 
     private UserResponse toResponse(User u) {
-        return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getRole(), u.isEnabled(), u.getApprovalStatus());
+        return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getRole(), u.isEnabled(),
+                u.getApprovalStatus());
     }
 }

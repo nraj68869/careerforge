@@ -31,9 +31,10 @@ public class JobController {
                                     @RequestParam(required = false) JobType type,
                                     @RequestParam(required = false) String q,
                                     @RequestParam(required = false) String location,
+                                    @RequestParam(required = false) String sort,
                                     @RequestParam(defaultValue = "0") int page,
                                     @RequestParam(defaultValue = "10") int size) {
-        return jobService.browse(actor, status, type, q, location, page, size);
+        return jobService.browse(actor, status, type, q, location, sort, page, size);
     }
 
     // Recruiters (and officers/admins): the jobs I posted
